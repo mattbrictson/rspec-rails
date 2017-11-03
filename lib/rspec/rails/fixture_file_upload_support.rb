@@ -2,38 +2,24 @@ module RSpec
   module Rails
     # @private
     module FixtureFileUploadSupport
-      delegate :fixture_file_upload, :to => :rails_fixture_file_wrapper
+      module_function
 
-    private
-
-      def rails_fixture_file_wrapper
-        resolved_fixture_path = (fixture_path || RSpec.configuration.fixture_path || '')
-        RailsFixtureFileWrapper.fixture_path = File.join(resolved_fixture_path, '')
-        RailsFixtureFileWrapper.instance
+      def included(other)
+        other.include ActionDispatch::TestProcess if defined?(ActionDispatch::TestProcess)
       end
 
-      class RailsFixtureFileWrapper
-        include ActionDispatch::TestProcess if defined?(ActionDispatch::TestProcess)
+      def fixture_file_upload
+        resolved_fixture_path = File.join(fixture_path || RSpec.configuration.fixture_path || '', '')
 
-        class << self
-          attr_reader :fixture_path
-
-          # Get the instance of wrapper
-          def instance
-            @instance ||= new
-          end
-
-          # Override fixture_path set
-          # to support Rails 3.0->3.1 using ActionController::TestCase class to resolve fixture_path
-          # see https://apidock.com/rails/v3.0.0/ActionDispatch/TestProcess/fixture_file_upload
-          def fixture_path=(value)
-            if ActionController::TestCase.respond_to?(:fixture_path)
-              ActionController::TestCase.fixture_path = value
-            end
-            @fixture_path = value
-          end
+        # Override fixture_path set
+        # to support Rails 3.0->3.1 using ActionController::TestCase class to resolve fixture_path
+        # see https://apidock.com/rails/v3.0.0/ActionDispatch/TestProcess/fixture_file_upload
+        if ActionController::TestCase.respond_to?(:fixture_path)
+          ActionController::TestCase.fixture_path = resolved_fixture_path
         end
+        resolved_fixture_path
       end
+
     end
   end
 end
