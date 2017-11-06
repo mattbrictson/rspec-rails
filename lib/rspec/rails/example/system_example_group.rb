@@ -30,7 +30,13 @@ if ActionPack::VERSION::STRING >= "5.1"
 
         # for the SystemTesting Screenshot situation
         def passed?
-          RSpec.current_example.exception.nil?
+          return false if RSpec.current_example.exception
+          return true unless defined?(::RSpec::Expectations::FailureAggregator)
+
+          failure_notifier = ::RSpec::Support.failure_notifier
+          return true unless failure_notifier.is_a?(::RSpec::Expectations::FailureAggregator)
+
+          failure_notifier.failures.empty? && failure_notifier.other_errors.empty?
         end
 
         # @private
